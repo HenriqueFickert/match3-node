@@ -1,0 +1,23 @@
+{
+  "name": "match3-node",
+  "version": "1.0.0",
+  "description": "Node server for a match 3 game.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HenriqueFickert/match3-node.git"
+  },
+  "author": "Henrique Fickert",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/HenriqueFickert/match3-node/issues"
+  },
+  "homepage": "https://github.com/HenriqueFickert/match3-node#readme",
+  "devDependencies": {
+    "@types/node": "^20.8.7"
+  }
+}
