@@ -1,17 +1,26 @@
 const net = require('net');
 
-let game = null;
+let games = [];
 
 const server = net.createServer((socket) => {
     console.log("Connection from", socket.remoteAddress, "port", socket.remotePort);
 
-    if (game === null) {
-        game = new Game();
-        game.playerOne = new Player(game, socket, "One");
-    } else {
-        game.playerTwo = new Player(game, socket, "Two");
-        game.startGame();
-        game = null;
+    if (!games.some(game => game.players.length < game.maxPlayers)) {
+        let game = new Game(2);
+        game.players.push(new Player(game, socket));
+
+        game.players[0].send("Waiting for opponents.");
+    }
+    else {
+        let availableGame = games.find(game => game.players.length < game.maxPlayers);
+        availableGame.players.push(new Player(availableGame, socket));
+
+        availableGame.players.forEach(element => {
+            element.send("A player entered the room.")
+        });
+
+        if (availableGame.players.length == availableGame.maxPlayers)
+            availableGame.startGame();
     }
 });
 
@@ -20,9 +29,14 @@ server.listen(3000, () => {
 });
 
 class Game {
-    constructor() {
+    constructor(maxPlayers) {
+        this.index = games.length;
+        this.maxPlayers = maxPlayers;
         this.board = [];
+        this.players = [];
+        this.currentPlayerIndex = 0;
         this.generateBoard();
+        games.push(this);
     }
 
     generateBoard() {
@@ -36,13 +50,16 @@ class Game {
     }
 
     startGame() {
-        this.currentPlayer = this.playerOne;
-        this.playerOne.opponent = this.playerTwo;
-        this.playerTwo.opponent = this.playerOne;
+        this.currentPlayer = this.players[this.currentPlayerIndex];
 
-        this.playerOne.send("A player entered the room.")
-        this.playerOne.send("Your move.");
-        this.playerTwo.send("Waiting for opponent's move.");
+        this.players.forEach(element => {
+            element.send("Game started.")
+
+            if (element !== this.currentPlayer)
+                element.send(`Waiting for opponent's ${this.currentPlayer.playerIndex} move.`);
+            else
+                element.send("Your move.");
+        });
     }
 
     move(location, destination, player) {
@@ -66,31 +83,34 @@ class Game {
 
                 this.fillBoard();
 
-                this.currentPlayer.send(JSON.stringify(this.board));
-                this.currentPlayer.opponent.send(JSON.stringify(this.board));
+                this.players.forEach(element => {
+                    element.send(JSON.stringify(this.board));
+                });
 
                 this.currentPlayer.points += matches.length;
                 matches = this.checkForMatch();
             }
-
-            // this.currentPlayer.points += matches.length;
-
-            this.currentPlayer.send(`Your points: ${this.currentPlayer.points}`);
-            this.currentPlayer.send(`Other player points: ${this.currentPlayer.opponent.points}`);
-
-            this.currentPlayer.opponent.send(`Your points: ${this.currentPlayer.opponent.points}`);
-            this.currentPlayer.opponent.send(`Other player points: ${this.currentPlayer.points}`);
-
-            // matches.forEach(coord => {
-            //     this.board[coord.x][coord.y] = null;
-            // });
-
-            // this.fillBoard();
         }
 
-        this.currentPlayer = this.currentPlayer.opponent;
-        this.currentPlayer.send("Your move.");
-        this.currentPlayer.opponent.send("Waiting for opponent's move.");
+        this.players.forEach(element => {
+            this.players.forEach(element2 => {
+                element.send(`player ${element2.playerIndex} points: ${element2.points}`);
+            });
+        });
+
+        if (this.currentPlayer.playerIndex >= this.players.length - 1)
+            this.currentPlayerIndex = 0;
+        else
+            this.currentPlayerIndex++;
+
+        this.currentPlayer = this.players[this.currentPlayerIndex];
+
+        this.players.forEach(element => {
+            if (element !== this.currentPlayer)
+                element.send(`Waiting for opponent's ${this.currentPlayer.playerIndex} move.`);
+            else
+                element.send("Your move.");
+        });
     }
 
     isValidCoordinate(coord) {
@@ -99,6 +119,10 @@ class Game {
     }
 
     swap(location, destination) {
+        if (!this.isValidCoordinate(location) || !this.isValidCoordinate(destination)) {
+            throw new Error("Invalid coordinates for swapping.");
+        }
+
         const temp = this.board[location.x][location.y];
         this.board[location.x][location.y] = this.board[destination.x][destination.y];
         this.board[destination.x][destination.y] = temp;
@@ -172,14 +196,13 @@ class Game {
 }
 
 class Player {
-    constructor(game, socket, player) {
+    constructor(game, socket) {
         this.game = game;
         this.socket = socket;
-        this.player = player;
-        this.opponent = null;
+        this.playerIndex = game.players.length;
         this.points = 0;
 
-        this.send(`Welcome player ${player}`);
+        this.send(`Welcome player ${this.playerIndex}`);
         this.send(JSON.stringify(this.game.board));
 
         socket.on("data", (buffer) => {
@@ -193,11 +216,16 @@ class Player {
             else if (/^MOVE/.test(command)) {
                 const [, location, destination] = command.split(' ');
                 try {
-                    this.game.move(JSON.parse(location), JSON.parse(destination), this);
+                    const parsedLocation = JSON.parse(location);
+                    const parsedDestination = JSON.parse(destination);
 
-                    this.opponent.send(`Your opponent moved: ${location} ${destination}`);
-                    this.opponent.send(JSON.stringify(this.game.board));
-                    this.send(JSON.stringify(this.game.board));
+                    if (!this.game.isValidCoordinate(parsedLocation) || !this.game.isValidCoordinate(parsedDestination)) {
+                        this.send("Invalid move coordinates.");
+                        return;
+                    }
+
+                    this.game.move(parsedLocation, parsedDestination, this);
+
                 } catch (e) {
                     this.send(`MESSAGE ${e.message}`);
                 }
@@ -206,7 +234,10 @@ class Player {
 
         socket.on("close", () => {
             try {
-                this.opponent.send("Other player left.");
+                this.game.players.forEach(element => {
+                    if (element !== this.game.players[this.playerIndex])
+                        element.send(`The opponent ${this.playerIndex} has disconnected.`);
+                });
             } catch (e) { }
         });
     }
