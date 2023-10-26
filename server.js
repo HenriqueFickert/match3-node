@@ -201,6 +201,17 @@ class Game {
 
         return matches;
     }
+
+    notifyPlayerDisconnection(disconnectedPlayer) {
+        this.players = this.players.filter(player => player !== disconnectedPlayer);
+        this.players.forEach(player => {
+            player.send(`The opponent ${disconnectedPlayer.playerIndex} has disconnected.`);
+        });
+
+        if (this.players.length === 0) {
+            games = games.filter(game => game !== this);
+        }
+    }
 }
 
 class Player {
@@ -253,14 +264,3 @@ class Player {
         this.socket.write(`${message}\n`);
     }
 }
-
-Game.prototype.notifyPlayerDisconnection = function (disconnectedPlayer) {
-    this.players = this.players.filter(player => player !== disconnectedPlayer);
-    this.players.forEach(player => {
-        player.send(`The opponent ${disconnectedPlayer.playerIndex} has disconnected.`);
-    });
-
-    if (this.players.length === 0) {
-        games = games.filter(game => game !== this);
-    }
-};
