@@ -3,24 +3,20 @@ const net = require('net');
 let games = [];
 
 const server = net.createServer((socket) => {
-    console.log("Connection from", socket.remoteAddress, "port", socket.remotePort);
+    console.log(`Connection from ${socket.remoteAddress} port ${socket.remotePort}`);
 
-    if (!games.some(game => game.players.length < game.maxPlayers)) {
-        let game = new Game(2);
-        game.players.push(new Player(game, socket));
+    let availableGame = games.find(game => game.players.length < game.maxPlayers);
 
-        game.players[0].send("Waiting for opponents.");
+    if (!availableGame) {
+        availableGame = new Game(4);
+        games.push(availableGame);
     }
-    else {
-        let availableGame = games.find(game => game.players.length < game.maxPlayers);
-        availableGame.players.push(new Player(availableGame, socket));
 
-        availableGame.players.forEach(element => {
-            element.send("A player entered the room.")
-        });
+    const player = new Player(availableGame, socket);
+    availableGame.addPlayer(player);
 
-        if (availableGame.players.length == availableGame.maxPlayers)
-            availableGame.startGame();
+    if (availableGame.players.length === availableGame.maxPlayers) {
+        availableGame.startGame();
     }
 });
 
@@ -36,7 +32,18 @@ class Game {
         this.players = [];
         this.currentPlayerIndex = 0;
         this.generateBoard();
-        games.push(this);
+    }
+
+    addPlayer(player) {
+        this.players.push(player);
+        player.send(`Welcome player ${player.playerIndex}`);
+        player.send(JSON.stringify(this.board));
+
+        if (this.players.length > 1) {
+            this.players.forEach(element => {
+                element.send("A player entered the room.");
+            });
+        }
     }
 
     generateBoard() {
@@ -53,12 +60,13 @@ class Game {
         this.currentPlayer = this.players[this.currentPlayerIndex];
 
         this.players.forEach(element => {
-            element.send("Game started.")
+            element.send("Game started.");
 
-            if (element !== this.currentPlayer)
+            if (element !== this.currentPlayer) {
                 element.send(`Waiting for opponent's ${this.currentPlayer.playerIndex} move.`);
-            else
+            } else {
                 element.send("Your move.");
+            }
         });
     }
 
@@ -202,47 +210,57 @@ class Player {
         this.playerIndex = game.players.length;
         this.points = 0;
 
-        this.send(`Welcome player ${this.playerIndex}`);
-        this.send(JSON.stringify(this.game.board));
+        this.setupSocketEvents();
+    }
 
-        socket.on("data", (buffer) => {
+    setupSocketEvents() {
+        this.socket.on("data", (buffer) => {
             const command = buffer.toString("utf-8").trim();
 
             console.log(command);
 
             if (command === "QUIT") {
-                socket.destroy();
+                this.socket.destroy();
             }
             else if (/^MOVE/.test(command)) {
                 const [, location, destination] = command.split(' ');
-                try {
-                    const parsedLocation = JSON.parse(location);
-                    const parsedDestination = JSON.parse(destination);
-
-                    if (!this.game.isValidCoordinate(parsedLocation) || !this.game.isValidCoordinate(parsedDestination)) {
-                        this.send("Invalid move coordinates.");
-                        return;
-                    }
-
-                    this.game.move(parsedLocation, parsedDestination, this);
-
-                } catch (e) {
-                    this.send(`MESSAGE ${e.message}`);
-                }
+                this.handleMoveCommand(location, destination);
             }
         });
 
-        socket.on("close", () => {
-            try {
-                this.game.players.forEach(element => {
-                    if (element !== this.game.players[this.playerIndex])
-                        element.send(`The opponent ${this.playerIndex} has disconnected.`);
-                });
-            } catch (e) { }
+        this.socket.on("close", () => {
+            this.game.notifyPlayerDisconnection(this);
         });
+    }
+
+    handleMoveCommand(location, destination) {
+        try {
+            const parsedLocation = JSON.parse(location);
+            const parsedDestination = JSON.parse(destination);
+
+            if (!this.game.isValidCoordinate(parsedLocation) || !this.game.isValidCoordinate(parsedDestination)) {
+                this.send("Invalid move coordinates.");
+                return;
+            }
+
+            this.game.move(parsedLocation, parsedDestination, this);
+        } catch (e) {
+            this.send(`MESSAGE ${e.message}`);
+        }
     }
 
     send(message) {
         this.socket.write(`${message}\n`);
     }
 }
+
+Game.prototype.notifyPlayerDisconnection = function (disconnectedPlayer) {
+    this.players = this.players.filter(player => player !== disconnectedPlayer);
+    this.players.forEach(player => {
+        player.send(`The opponent ${disconnectedPlayer.playerIndex} has disconnected.`);
+    });
+
+    if (this.players.length === 0) {
+        games = games.filter(game => game !== this);
+    }
+};
