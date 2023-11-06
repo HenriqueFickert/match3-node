@@ -19,5 +19,8 @@
   "homepage": "https://github.com/HenriqueFickert/match3-node#readme",
   "devDependencies": {
     "@types/node": "^20.8.7"
+  },
+  "dependencies": {
+    "dgram": "^1.0.1"
   }
 }
