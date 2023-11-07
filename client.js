@@ -1,33 +1,58 @@
 //MOVE {"x":1,"y":0} {"x":0,"y":1}
 
-const net = require('net');
+const dgram = require('dgram');
 const readline = require('readline');
+const client = dgram.createSocket('udp4');
 
-const client = new net.Socket();
-client.connect(3000, '127.0.0.1', () => {
-    console.log('Conectado ao servidor!');
+const serverHost = '127.0.0.1';
+const serverPort = 3000;
+
+client.on('message', (msg) => {
+    console.log(`Server: ${msg.toString()}`);
 });
 
-client.on('data', (data) => {
-    console.log(data.toString());
-});
-
-client.on('close', () => {
-    console.log('Conexão encerrada.');
+client.on('error', (err) => {
+    console.error(`Client error: ${err.stack}`);
+    client.close();
     process.exit();
 });
 
-const reader = readline.createInterface({ input: process.stdin })
-reader.on("line", (line) => {
+client.on('close', () => {
+    console.log('Socket closed.');
+    process.exit();
+});
 
-    if (/^MOVE/.test(line) || line === "QUIT") {
-        client.write(`${line}\n`);
+const reader = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+    prompt: 'Enter command (MOVE, QUIT, ENTER): '
+});
+
+reader.prompt();
+
+reader.on('line', (line) => {
+    line = line.trim();
+    if (/^MOVE/.test(line) || line === 'QUIT' || line === 'ENTER') {
+        const message = Buffer.from(line);
+        client.send(message, serverPort, serverHost, (err) => {
+            if (err) {
+                console.error(`Send error: ${err}`);
+                client.close();
+            } else {
+                console.log("Message sent successfully.");
+            }
+        });
+
+        if (line === 'QUIT') {
+            reader.close();
+        }
     } else {
-        console.log("Invalid command.")
+        console.log("Invalid command. Valid commands are MOVE, QUIT, and ENTER.");
+        reader.prompt();
     }
+});
 
-})
-
-reader.on("close", () => {
-    client.end();
-})
+reader.on('close', () => {
+    console.log('Closing client.');
+    client.close();
+});
