@@ -49,6 +49,10 @@ class Player {
             }
         });
     }
+
+    disconectPlayer() {
+        this.game.notifyPlayerDisconnection(this);
+    }
 }
 
 module.exports = Player;

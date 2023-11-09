@@ -5,6 +5,7 @@ class Game {
         this.board = [];
         this.players = [];
         this.currentPlayerIndex = 0;
+        this.leftPlayersIndex = [];
         this.generateBoard();
     }
 
@@ -88,10 +89,21 @@ class Game {
             });
         });
 
+        this.checkForWinner(this.currentPlayer);
+
         if (this.currentPlayer.playerIndex >= this.players.length - 1)
             this.currentPlayerIndex = 0;
         else
             this.currentPlayerIndex++;
+
+        // if (this.leftPlayersIndex.length > 0 && this.players.length > 0) {
+        //     while (this.leftPlayersIndex.some(this.currentPlayerIndex)) {
+        //         if (this.currentPlayer.playerIndex >= this.players.length - 1)
+        //             this.currentPlayerIndex = 0;
+        //         else
+        //             this.currentPlayerIndex++;
+        //     }
+        // }
 
         this.currentPlayer = this.players[this.currentPlayerIndex];
 
@@ -184,14 +196,29 @@ class Game {
         return matches;
     }
 
+    checkForWinner(player) {
+        if (player.points >= 5) {
+            this.players.forEach(element => {
+                element.send(`Player ${player.playerIndex} won the game.`);
+                element.disconectPlayer();
+            });
+        }
+    }
+
     notifyPlayerDisconnection(disconnectedPlayer) {
+        // this.leftPlayersIndex.push(disconnectedPlayer.playerIndex);
+
         this.players = this.players.filter(player => player !== disconnectedPlayer);
+
         this.players.forEach(player => {
             player.send(`The opponent ${disconnectedPlayer.playerIndex} has disconnected.`);
         });
 
         if (this.players.length === 0) {
-            games = games.filter(game => game !== this);
+
+        }
+        else if (this.players.length === 1) {
+            this.players[0].send("This game has no more players left.");
         }
     }
 }
