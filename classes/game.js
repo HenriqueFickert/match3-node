@@ -7,6 +7,7 @@ class Game {
         this.currentPlayerIndex = 0;
         this.leftPlayersIndex = [];
         this.generateBoard();
+        this.started = false;
     }
 
     isFull() {
@@ -14,8 +15,8 @@ class Game {
     }
 
     startGame() {
+        this.started = true;
         this.currentPlayer = this.players[this.currentPlayerIndex];
-
         this.players.forEach(element => {
             element.send("Game started.");
 
@@ -54,12 +55,20 @@ class Game {
     }
 
     move(location, destination, player) {
+
+        if (!this.started) {
+            player.send("The game didn't started yet.");
+            return;
+        }
+
         if (player !== this.currentPlayer) {
-            throw new Error("Not your turn.");
+            player.send("Not your turn.");
+            return;
         }
 
         if (!this.isValidCoordinate(location) || !this.isValidCoordinate(destination)) {
-            throw new Error("Invalid coordinate.");
+            player.send("Invalid coordinate.");
+            return;
         }
 
         this.swap(location, destination);
@@ -121,10 +130,6 @@ class Game {
     }
 
     swap(location, destination) {
-        if (!this.isValidCoordinate(location) || !this.isValidCoordinate(destination)) {
-            throw new Error("Invalid coordinates for swapping.");
-        }
-
         const temp = this.board[location.x][location.y];
         this.board[location.x][location.y] = this.board[destination.x][destination.y];
         this.board[destination.x][destination.y] = temp;
@@ -205,7 +210,7 @@ class Game {
         }
     }
 
-    notifyPlayerDisconnection(disconnectedPlayer) {
+    handlePlayerDisconnection(disconnectedPlayer) {
         // this.leftPlayersIndex.push(disconnectedPlayer.playerIndex);
 
         this.players = this.players.filter(player => player !== disconnectedPlayer);
@@ -215,7 +220,7 @@ class Game {
         });
 
         if (this.players.length === 0) {
-
+            delete (this);
         }
         else if (this.players.length === 1) {
             this.players[0].send("This game has no more players left.");

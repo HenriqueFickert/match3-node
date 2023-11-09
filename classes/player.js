@@ -17,7 +17,7 @@ class Player {
                     throw new Error('Invalid MOVE format. Expected: MOVE {"x":1,"y":0} {"x":0,"y":1}');
                 }
             } else if (message === 'QUIT') {
-                this.game.notifyPlayerDisconnection(this);
+                this.disconectPlayer();
             } else {
                 throw new Error('Unknown command.');
             }
@@ -30,10 +30,6 @@ class Player {
         try {
             const parsedLocation = JSON.parse(location);
             const parsedDestination = JSON.parse(destination);
-
-            if (!this.game.isValidCoordinate(parsedLocation) || !this.game.isValidCoordinate(parsedDestination)) {
-                throw new Error("Invalid move coordinates.");
-            }
 
             this.game.move(parsedLocation, parsedDestination, this);
         } catch (e) {
@@ -51,7 +47,7 @@ class Player {
     }
 
     disconectPlayer() {
-        this.game.notifyPlayerDisconnection(this);
+        this.game.handlePlayerDisconnection(this);
     }
 }
 
