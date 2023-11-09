@@ -30,7 +30,7 @@ function handleGameLobbies(senderInfo) {
     let availableGame = games.find(game => !game.isFull());
 
     if (!availableGame) {
-        availableGame = new Game(3, games.length);
+        availableGame = new Game(2, games.length);
         games.push(availableGame);
     }
 

@@ -30,14 +30,16 @@ class Game {
 
     addPlayer(player) {
         this.players.push(player);
+
+        this.players.forEach(element => {
+            if (element !== player)
+                element.send("A player entered the room.");
+            else
+                element.send("You entered the room.");
+        });
+
         player.send(`Welcome player ${player.playerIndex}`);
         player.send(JSON.stringify(this.board));
-
-        if (this.players.length > 1) {
-            this.players.forEach(element => {
-                element.send("A player entered the room.");
-            });
-        }
 
         if (this.players.length === this.maxPlayers) {
             this.startGame();
@@ -55,7 +57,6 @@ class Game {
     }
 
     move(location, destination, player) {
-
         if (!this.started) {
             player.send("The game didn't started yet.");
             return;
@@ -94,7 +95,15 @@ class Game {
 
         this.players.forEach(element => {
             this.players.forEach(element2 => {
-                element.send(`player ${element2.playerIndex} points: ${element2.points}`);
+                const jsonMessage = {
+                    PlayerPoints: {
+                        index: element2.playerIndex,
+                        points: element2.points
+                    }
+                };
+                const jsonString = JSON.stringify(jsonMessage);
+
+                element.send(jsonString);
             });
         });
 
@@ -217,6 +226,7 @@ class Game {
         // this.leftPlayersIndex.push(disconnectedPlayer.playerIndex);
 
         this.players = this.players.filter(player => player !== disconnectedPlayer);
+        disconnectedPlayer.send("You have been disconected from the server.")
 
         this.players.forEach(player => {
             player.send(`The opponent ${disconnectedPlayer.playerIndex} has disconnected.`);
