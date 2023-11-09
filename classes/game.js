@@ -205,8 +205,11 @@ class Game {
         if (player.points >= 5) {
             this.players.forEach(element => {
                 element.send(`Player ${player.playerIndex} won the game.`);
-                element.disconectPlayer();
             });
+
+            this.players.forEach(element => {
+                element.disconectPlayer();
+            })
         }
     }
 

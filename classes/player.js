@@ -14,7 +14,7 @@ class Player {
                 if (parts && parts.length === 3) {
                     this.handleMoveCommand(parts[1], parts[2]);
                 } else {
-                    throw new Error('Invalid MOVE format. Expected: MOVE {"x":1,"y":0} {"x":0,"y":1}');
+                    this.send('Invalid MOVE format. Expected: MOVE {"x":1,"y":0} {"x":0,"y":1}');
                 }
             } else if (message === 'QUIT') {
                 this.disconectPlayer();
