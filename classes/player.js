@@ -33,7 +33,7 @@ class Player {
 
             this.game.move(parsedLocation, parsedDestination, this);
         } catch (e) {
-            this.send(`ERROR ${e.message}`);
+            this.send(`ERROR HANDLE ${e.message}`);
         }
     }
 
