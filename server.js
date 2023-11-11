@@ -1,22 +1,23 @@
-const Game = require('./classes/game');
-const Player = require('./classes/player');
+const Package = require('./classes/package');
+const ClientManager = require('./classes/ClientManager');
+const REQUEST_TYPES = require('./classes/request-type');
 const dgram = require('dgram');
 const server = dgram.createSocket('udp4');
 
-let games = [];
+var clients = [];
 
 server.on('message', (msg, senderInfo) => {
     console.log(`Server got: ${msg} from ${senderInfo.address}:${senderInfo.port}`);
 
-    let game = games.find(g => g.players.some(p => p.rinfo.address === senderInfo.address && p.rinfo.port === senderInfo.port));
-    let playerInMatch = game?.players.find(p => p.rinfo.address === senderInfo.address && p.rinfo.port === senderInfo.port);
+    let client = clients.find(p => p.rinfo.address === senderInfo.address && p.rinfo.port === senderInfo.port);
 
-    if (!playerInMatch) {
-        handleGameLobbies(senderInfo);
+    if(!client)
+    {
+        client = new ClientManager(senderInfo, server);
+        clients.push(client);
     }
-    else {
-        playerInMatch.handlePlayerCommand(msg.toString().trim());
-    }
+
+    client.recievedMessage(msg);
 });
 
 server.on('listening', () => {
@@ -26,14 +27,6 @@ server.on('listening', () => {
 
 server.bind(3000);
 
-function handleGameLobbies(senderInfo) {
-    let availableGame = games.find(game => !game.isFull());
-
-    if (!availableGame) {
-        availableGame = new Game(2, games.length);
-        games.push(availableGame);
-    }
-
-    const player = new Player(availableGame, senderInfo, server);
-    availableGame.addPlayer(player);
+function createMessage(data, type){
+    return new Package(this.localSequenceNumber, this.latestPackageNumerRecieved, data, type);
 }
