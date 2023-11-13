@@ -33,27 +33,25 @@ const reader = readline.createInterface({
 reader.prompt();
 
 reader.on('line', (line) => {
-    var object = new Package(0,0, bigStringReturn(), REQUEST_TYPES.REQ);
+    var object = new Package(0, 0, bigStringReturn(), REQUEST_TYPES.REQ);
     const message = Buffer.from(JSON.stringify(object));
     sendMessage(message);
 });
 
 function sendMessage(message) {
     const msgBuffer = sendMessageBufferHandler(message);
-    
+
     client.send(msgBuffer, 0, msgBuffer.length, serverPort, serverHost, (err) => {
         if (err) {
             console.error(`Error sending message to ${serverHost}:${serverHost}: ${err}`);
-        }else {
+        } else {
             console.log("Message sent successfully.");
         }
     });
 }
 
-function sendMessageBufferHandler(message){
-    const byteArray = utf8EncodeText.encode(`${message}MRQST`);
-    console.log(byteArray);
-    let content = Buffer.from(byteArray);
+function sendMessageBufferHandler(message) {
+    let content = Buffer.from(`${message}|`);
     console.log(content);
     return content;
 }
@@ -63,6 +61,6 @@ reader.on('close', () => {
     client.close();
 });
 
-function bigStringReturn(){
+function bigStringReturn() {
     return `1`
 }
