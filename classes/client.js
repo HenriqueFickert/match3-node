@@ -1,37 +1,43 @@
 const REQUEST_TYPES = require('./request-type');
 const Package = require('./package');
 
-class ClientManager {
-
+class Client {
     constructor(senderInfo, server) {
         this.rinfo = senderInfo;
         this.server = server;
         this.packagesSent = [];
         this.packagesRecived = [];
-        this.localPackageSequenceNumberSent = 0;
-        this.latestPackageNumerRecieved = 0;
+        this.packageSequence = 0;
+        this.latestAck = 0;
         this.messageBuffered = '';
     }
 
-    recievedMessage(message) {
-        if (!this.recievedMessageBufferHandler(message))
+    receivedMessage(message) {
+        if (!this.receivedMessageBufferHandler(message))
             return;
 
-        var recievedObject = this.packagesRecived[this.packagesRecived - 1];
+        let receivedObject = this.packagesRecived[this.packagesRecived.length - 1];
 
-        if (recievedObject.sequence > this.latestPackageNumerRecieved)
-            this.latestPackageNumerRecieved = recievedObject.sequence;
+        if (receivedObject.sequence > this.latestAck)
+            this.latestAck = receivedObject.sequence;
 
-        var object = new Package(0, 0, 'bigStringReturn()', REQUEST_TYPES.REQ);
-        this.sendMessage(object);
-        //Criar a logica de quando perder a mensagem e chegar uma nova solicitar a antiga 
+        this.packagesRecived.sort(function (x, y) {
+            return x.sequence - y.sequence;
+        });
+
+        console.log(this.latestAck);
+        console.log(this.packageSequence);
+
+        let object = new Package(this.packageSequence, this.latestAck, '123', REQUEST_TYPES.RES);
+        this.sendMessage(JSON.stringify(object));
+
+        // Criar a logica de quando perder a mensagem e chegar uma nova solicitar a antiga 
     }
 
-    recievedMessageBufferHandler(message) {
+    receivedMessageBufferHandler(message) {
         this.messageBuffered += message;
 
         if (this.messageBuffered.endsWith('|')) {
-            console.log("messageBuffered: ", this.messageBuffered);
             this.messageBuffered = this.messageBuffered.slice(0, -1);
             let validMessage = this.DiscartableMessageHandler();
             this.messageBuffered = '';
@@ -44,15 +50,10 @@ class ClientManager {
     DiscartableMessageHandler() {
         let object = JSON.parse(this.messageBuffered);
 
-        console.log(object.protocolId !== 'MRQST');
-        console.log(!object.protocolId);
-        console.log(!object.sequence);
-        console.log(!object.ack);
-
-        if (!object.protocolId || object.protocolId !== 'MRQST' || object.sequence >= 0 || object.ack >= 0)
+        if (!object.protocolId || object.protocolId !== 'MRQST')
             return false;
 
-        this.packagesRecived.push(this.messageBuffered);
+        this.packagesRecived.push(object);
         return true;
     }
 
@@ -63,8 +64,8 @@ class ClientManager {
             if (err) {
                 console.error(`Error sending message to ${this.rinfo.address}:${this.rinfo.port}: ${err}`);
             } else {
-                this.packagesSent.push[message];
-                this.localPackageSequenceNumberSent++;
+                this.packagesSent.push(message);
+                this.packageSequence++;
             }
         });
     }
@@ -75,4 +76,4 @@ class ClientManager {
     }
 }
 
-module.exports = ClientManager;
+module.exports = Client;

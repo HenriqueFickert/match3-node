@@ -1,5 +1,5 @@
 const Package = require('./classes/package');
-const ClientManager = require('./classes/clientmanager');
+const ClientManager = require('./classes/client');
 const REQUEST_TYPES = require('./classes/request-type');
 const dgram = require('dgram');
 const server = dgram.createSocket('udp4');
@@ -16,7 +16,7 @@ server.on('message', (msg, senderInfo) => {
         clients.push(client);
     }
 
-    client.recievedMessage(msg);
+    client.receivedMessage(msg);
 });
 
 server.on('listening', () => {
@@ -25,7 +25,3 @@ server.on('listening', () => {
 });
 
 server.bind(3000);
-
-function createMessage(data, type) {
-    return new Package(this.localSequenceNumber, this.latestPackageNumerRecieved, data, type);
-}
