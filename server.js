@@ -1,6 +1,4 @@
-const Package = require('./classes/package');
-const ClientManager = require('./classes/client');
-const REQUEST_TYPES = require('./classes/request-type');
+const ClientObject = require('./classes/clientobject');
 const dgram = require('dgram');
 const server = dgram.createSocket('udp4');
 
@@ -12,7 +10,7 @@ server.on('message', (msg, senderInfo) => {
     let client = clients.find(p => p.rinfo.address === senderInfo.address && p.rinfo.port === senderInfo.port);
 
     if (!client) {
-        client = new ClientManager(senderInfo, server);
+        client = new ClientObject(senderInfo, server);
         clients.push(client);
     }
 

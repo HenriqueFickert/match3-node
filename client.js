@@ -34,7 +34,7 @@ const reader = readline.createInterface({
 reader.prompt();
 
 reader.on('line', (line) => {
-    let object = new Package(packageSequence, latestAck, '123', REQUEST_TYPES.RES);
+    let object = new Package(packageSequence, latestAck, line, REQUEST_TYPES.REQ);
     sendMessage(JSON.stringify(object));
 });
 
@@ -69,11 +69,6 @@ function receivedMessage(message) {
     packagesRecived.sort(function (x, y) {
         return x.sequence - y.sequence;
     });
-
-    // let object = new Package(packageSequence, latestAck, '123', REQUEST_TYPES.RES);
-    // sendMessage(object);
-
-    // Criar a logica de quando perder a mensagem e chegar uma nova solicitar a antiga 
 }
 
 function receivedMessageBufferHandler(message) {

@@ -1,7 +1,7 @@
 const REQUEST_TYPES = require('./request-type');
 const Package = require('./package');
 
-class Client {
+class ClientObject {
     constructor(senderInfo, server) {
         this.rinfo = senderInfo;
         this.server = server;
@@ -30,8 +30,6 @@ class Client {
 
         let object = new Package(this.packageSequence, this.latestAck, '123', REQUEST_TYPES.RES);
         this.sendMessage(JSON.stringify(object));
-
-        // Criar a logica de quando perder a mensagem e chegar uma nova solicitar a antiga 
     }
 
     receivedMessageBufferHandler(message) {
@@ -76,4 +74,4 @@ class Client {
     }
 }
 
-module.exports = Client;
+module.exports = ClientObject;
