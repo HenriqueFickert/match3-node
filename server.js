@@ -7,6 +7,13 @@ var clients = [];
 server.on('message', (msg, senderInfo) => {
     console.log(`Server got: ${msg} from ${senderInfo.address}:${senderInfo.port}`);
 
+    let random = Math.floor(Math.random() * 101);
+
+    if (random < 10) {
+        console.log("Pacote perdido:", msg);
+        return;
+    }
+
     let client = clients.find(p => p.rinfo.address === senderInfo.address && p.rinfo.port === senderInfo.port);
 
     if (!client) {

@@ -9,7 +9,7 @@ const serverHost = '127.0.0.1';
 const serverPort = 3000;
 
 var packagesSent = [];
-var packagesRecived = [];
+var packagesReceived = [];
 var packageSequence = 0;
 var latestAck = 0;
 var messageBuffered = '';
@@ -61,37 +61,47 @@ function receivedMessage(message) {
     if (!receivedMessageBufferHandler(message))
         return;
 
-    receivedObject = packagesRecived[packagesRecived.length - 1];
+    let receivedObject = packagesReceived[packagesReceived.length - 1];
 
-    if (receivedObject.sequence > latestAck)
+    if (receivedObject.sequence === latestAck + 1)
         latestAck = receivedObject.sequence;
+    else
+        return;
 
-    packagesRecived.sort(function (x, y) {
-        return x.sequence - y.sequence;
-    });
+    console.log("Server: ", receivedObject)
+    // let object = new Package(this.packageSequence, this.latestAck, '123', REQUEST_TYPES.REQ);
+    // sendMessage(JSON.stringify(object));
 }
 
 function receivedMessageBufferHandler(message) {
     messageBuffered += message;
 
     if (messageBuffered.endsWith('|')) {
-        messageBuffered = messageBuffered.slice(0, -1);
-        let validMessage = DiscartableMessageHandler();
-        messageBuffered = '';
-        return validMessage;
+        let messageParts = messageBuffered.split('|');
+        messageBuffered = messageParts.pop();
+
+        for (let part of messageParts) {
+            if (DiscartableMessageHandler(part))
+                return true;
+        }
     }
 
     return false;
 }
 
-function DiscartableMessageHandler() {
-    let object = JSON.parse(messageBuffered);
+function DiscartableMessageHandler(messagePart) {
+    try {
+        let object = JSON.parse(messagePart);
 
-    if (!object.protocolId || object.protocolId !== 'MRQST')
+        if (!object.protocolId || object.protocolId !== 'MRQST')
+            return false;
+
+        packagesReceived.push(object);
+        return true;
+    } catch (e) {
+        console.error('Error parsing message:', e);
         return false;
-
-    packagesRecived.push(object);
-    return true;
+    }
 }
 
 function sendMessageBufferHandler(message) {

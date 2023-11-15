@@ -6,7 +6,7 @@ class ClientObject {
         this.rinfo = senderInfo;
         this.server = server;
         this.packagesSent = [];
-        this.packagesRecived = [];
+        this.packagesReceived = [];
         this.packageSequence = 0;
         this.latestAck = 0;
         this.messageBuffered = '';
@@ -16,17 +16,12 @@ class ClientObject {
         if (!this.receivedMessageBufferHandler(message))
             return;
 
-        let receivedObject = this.packagesRecived[this.packagesRecived.length - 1];
+        let receivedObject = this.packagesReceived[this.packagesReceived.length - 1];
 
-        if (receivedObject.sequence > this.latestAck)
+        if (receivedObject.sequence === this.latestAck + 1)
             this.latestAck = receivedObject.sequence;
-
-        this.packagesRecived.sort(function (x, y) {
-            return x.sequence - y.sequence;
-        });
-
-        console.log(this.latestAck);
-        console.log(this.packageSequence);
+        else
+            return;
 
         let object = new Package(this.packageSequence, this.latestAck, '123', REQUEST_TYPES.RES);
         this.sendMessage(JSON.stringify(object));
@@ -36,23 +31,32 @@ class ClientObject {
         this.messageBuffered += message;
 
         if (this.messageBuffered.endsWith('|')) {
-            this.messageBuffered = this.messageBuffered.slice(0, -1);
-            let validMessage = this.DiscartableMessageHandler();
-            this.messageBuffered = '';
-            return validMessage;
+            let messageParts = this.messageBuffered.split('|');
+
+            this.messageBuffered = messageParts.pop();
+
+            for (let part of messageParts) {
+                if (this.DiscartableMessageHandler(part))
+                    return true;
+            }
         }
 
         return false;
     }
 
-    DiscartableMessageHandler() {
-        let object = JSON.parse(this.messageBuffered);
+    DiscartableMessageHandler(messagePart) {
+        try {
+            let object = JSON.parse(messagePart);
 
-        if (!object.protocolId || object.protocolId !== 'MRQST')
+            if (!object.protocolId || object.protocolId !== 'MRQST')
+                return false;
+
+            this.packagesReceived.push(object);
+            return true;
+        } catch (e) {
+            console.error('Error parsing message:', e);
             return false;
-
-        this.packagesRecived.push(object);
-        return true;
+        }
     }
 
     sendMessage(message) {
