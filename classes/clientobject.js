@@ -7,7 +7,7 @@ class ClientObject {
         this.server = server;
         this.packagesSent = [];
         this.packagesReceived = [];
-        this.packageSequence = 0;
+        this.packageSequence = 1;
         this.latestAck = 0;
         this.messageBuffered = '';
     }
@@ -17,11 +17,6 @@ class ClientObject {
             return;
 
         let receivedObject = this.packagesReceived[this.packagesReceived.length - 1];
-
-        if (receivedObject.sequence === this.latestAck + 1)
-            this.latestAck = receivedObject.sequence;
-        else
-            return;
 
         let object = new Package(this.packageSequence, this.latestAck, '123', REQUEST_TYPES.RES);
         this.sendMessage(JSON.stringify(object));
@@ -49,6 +44,11 @@ class ClientObject {
             let object = JSON.parse(messagePart);
 
             if (!object.protocolId || object.protocolId !== 'MRQST')
+                return false;
+
+            if (object.sequence === this.latestAck + 1)
+                this.latestAck = receivedObject.sequence;
+            else
                 return false;
 
             this.packagesReceived.push(object);

@@ -10,7 +10,7 @@ const serverPort = 3000;
 
 var packagesSent = [];
 var packagesReceived = [];
-var packageSequence = 0;
+var packageSequence = 1;
 var latestAck = 0;
 var messageBuffered = '';
 
@@ -67,6 +67,8 @@ function receivedMessage(message) {
         latestAck = receivedObject.sequence;
     else
         return;
+
+    //
 
     console.log("Server: ", receivedObject)
     // let object = new Package(this.packageSequence, this.latestAck, '123', REQUEST_TYPES.REQ);
