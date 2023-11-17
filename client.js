@@ -10,7 +10,7 @@ const serverPort = 3000;
 
 var packagesSent = [];
 var packagesReceived = [];
-var packageSequence = 1;
+var packageSequence = 0;
 var latestAck = 0;
 var messageBuffered = '';
 

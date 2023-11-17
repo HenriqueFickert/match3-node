@@ -7,7 +7,7 @@ class ClientObject {
         this.server = server;
         this.packagesSent = [];
         this.packagesReceived = [];
-        this.packageSequence = 1;
+        this.packageSequence = 0;
         this.latestAck = 0;
         this.messageBuffered = '';
     }
@@ -16,8 +16,10 @@ class ClientObject {
         if (!this.receivedMessageBufferHandler(message))
             return;
 
-        let receivedObject = this.packagesReceived[this.packagesReceived.length - 1];
+        if (!this.packagesReceived[this.packagesReceived.length - 1])
+            return;
 
+        let receivedObject = this.packagesReceived[this.packagesReceived.length - 1];
         let object = new Package(this.packageSequence, this.latestAck, '123', REQUEST_TYPES.RES);
         this.sendMessage(JSON.stringify(object));
     }
@@ -25,7 +27,7 @@ class ClientObject {
     receivedMessageBufferHandler(message) {
         this.messageBuffered += message;
 
-        if (this.messageBuffered.endsWith('|')) {
+        if (this.messageBuffered.indexOf('|')) {
             let messageParts = this.messageBuffered.split('|');
 
             this.messageBuffered = messageParts.pop();
@@ -47,9 +49,18 @@ class ClientObject {
                 return false;
 
             if (object.sequence === this.latestAck + 1)
+            {
                 this.latestAck = receivedObject.sequence;
-            else
+            }
+            else if (object.sequence > this.latestAck + 1)
+            {
+                //PEDIR PARA REENVIAR A MENSAGEM TALVEZ UTILIZAR O TIPO DE ACK
                 return false;
+            } else {
+                return false;
+            }
+
+            //Organizar e remover duplicadas das mensagens
 
             this.packagesReceived.push(object);
             return true;
