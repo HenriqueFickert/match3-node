@@ -10,7 +10,7 @@ const serverPort = 3000;
 
 var packagesSent = [];
 var packagesReceived = [];
-var packageSequence = 0;
+var packageSequence = 1;
 var latestAck = 0;
 var messageBuffered = '';
 
@@ -61,48 +61,73 @@ function receivedMessage(message) {
     if (!receivedMessageBufferHandler(message))
         return;
 
-    let receivedObject = packagesReceived[packagesReceived.length - 1];
-
-    if (receivedObject.sequence === latestAck + 1)
-        latestAck = receivedObject.sequence;
-    else
+    if (!packagesReceived[packagesReceived.length - 1])
         return;
 
-    //
-
-    console.log("Server: ", receivedObject)
-    // let object = new Package(this.packageSequence, this.latestAck, '123', REQUEST_TYPES.REQ);
-    // sendMessage(JSON.stringify(object));
+    console.log("Server: ", packagesReceived[packagesReceived.length - 1]);
 }
 
 function receivedMessageBufferHandler(message) {
     messageBuffered += message;
 
-    if (messageBuffered.endsWith('|')) {
+    if (messageBuffered.includes('|')) {
         let messageParts = messageBuffered.split('|');
         messageBuffered = messageParts.pop();
 
-        for (let part of messageParts) {
-            if (DiscartableMessageHandler(part))
-                return true;
-        }
-    }
+        messageParts.forEach(part => {
+            if (!discartableMessageHandler(part))
+                return false;
+        });
 
+        return true;
+    }
     return false;
 }
 
-function DiscartableMessageHandler(messagePart) {
+function discartableMessageHandler(messagePart) {
     try {
         let object = JSON.parse(messagePart);
 
         if (!object.protocolId || object.protocolId !== 'MRQST')
             return false;
 
-        packagesReceived.push(object);
+        if (object.type === REQUEST_TYPES.RESEND) {
+            resendPackage(object.ack);
+            return false;
+        }
+
+        if (object.sequence === latestAck + 1) {
+            latestAck = object.sequence;
+            addToReceivedPackages(object);
+        } else if (object.sequence > latestAck + 1) {
+            requestMissingPackage();
+            return false;
+        }
+
         return true;
     } catch (e) {
         console.error('Error parsing message:', e);
         return false;
+    }
+}
+
+function addToReceivedPackages(object) {
+    if (!packagesReceived.some(item => item.sequence === object.sequence)) {
+        packagesReceived.push(object);
+        packagesReceived.sort((a, b) => a.sequence - b.sequence);
+    }
+}
+
+function requestMissingPackage() {
+    let requestResend = new Package(packageSequence, latestAck, '', REQUEST_TYPES.RESEND);
+    sendMessage(JSON.stringify(requestResend));
+}
+
+function resendPackage(ack) {
+    if (packagesSent.length > 0) {
+        let lostPackage = packagesSent.find(x => x.sequence === ack + 1);
+        console.log(lostPackage);
+        sendMessage(JSON.stringify(lostPackage));
     }
 }
 
