@@ -48,6 +48,7 @@ function sendMessage(message) {
             console.error(`Error sending message to ${serverHost}:${serverHost}: ${err}`);
         } else {
             packagesSent.push(JSON.parse(message));
+            packagesSent.sort((a, b) => a.sequence - b.sequence);
             packageSequence++;
         }
     });
@@ -92,7 +93,7 @@ function discartableMessageHandler(messagePart) {
             return false;
 
         if (object.type === REQUEST_TYPES.RESEND) {
-            resendPackage(object.ack);
+            resendPackages(object.ack);
             return false;
         }
 
@@ -123,11 +124,19 @@ function requestMissingPackage() {
     sendMessage(JSON.stringify(requestResend));
 }
 
-function resendPackage(ack) {
+function resendPackages(ack) {
     if (packagesSent.length > 0) {
-        let lostPackage = packagesSent.find(x => x.sequence === ack + 1);
-        console.log(lostPackage);
-        sendMessage(JSON.stringify(lostPackage));
+        packagesSent
+            .filter(x => x.sequence > ack)
+            .forEach(y => {
+                const msgBuffer = sendMessageBufferHandler(JSON.stringify(y));
+
+                client.send(msgBuffer, 0, msgBuffer.length, serverPort, serverHost, (err) => {
+                    if (err) {
+                        console.error(`Error sending message to ${serverHost}:${serverHost}: ${err}`);
+                    }
+                });
+            });
     }
 }
 

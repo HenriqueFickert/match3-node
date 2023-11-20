@@ -8,10 +8,24 @@ server.on('message', (msg, senderInfo) => {
     console.log(`Server got: ${msg} from ${senderInfo.address}:${senderInfo.port}`);
 
     let random = Math.floor(Math.random() * 101);
+    let random2 = Math.floor(Math.random() * 101);
 
     if (random < 10) {
         console.log("Pacote perdido:", msg);
         return;
+    }
+
+    if (random2 < 10) {
+        console.log("Pacote duplicado:", msg);
+
+        let client = clients.find(p => p.rinfo.address === senderInfo.address && p.rinfo.port === senderInfo.port);
+
+        if (!client) {
+            client = new ClientObject(senderInfo, server);
+            clients.push(client);
+        }
+
+        client.onReceivedMessage(msg);
     }
 
     let client = clients.find(p => p.rinfo.address === senderInfo.address && p.rinfo.port === senderInfo.port);
@@ -21,7 +35,7 @@ server.on('message', (msg, senderInfo) => {
         clients.push(client);
     }
 
-    client.receivedMessage(msg);
+    client.onReceivedMessage(msg);
 });
 
 server.on('listening', () => {
