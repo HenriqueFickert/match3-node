@@ -38,28 +38,12 @@ reader.on('line', (line) => {
     sendMessage(JSON.stringify(object));
 });
 
-function sendMessage(message) {
-    const msgBuffer = sendMessageBufferHandler(message);
-
-    console.log(message);
-
-    client.send(msgBuffer, 0, msgBuffer.length, serverPort, serverHost, (err) => {
-        if (err) {
-            console.error(`Error sending message to ${serverHost}:${serverHost}: ${err}`);
-        } else {
-            packagesSent.push(JSON.parse(message));
-            packagesSent.sort((a, b) => a.sequence - b.sequence);
-            packageSequence++;
-        }
-    });
-}
-
 client.on('message', (msg) => {
     receivedMessage(msg);
 });
 
 function receivedMessage(message) {
-    if (!receivedMessageBufferHandler(message))
+    if (!bufferMessage(message))
         return;
 
     if (!packagesReceived[packagesReceived.length - 1])
@@ -68,24 +52,19 @@ function receivedMessage(message) {
     console.log("Server: ", packagesReceived[packagesReceived.length - 1]);
 }
 
-function receivedMessageBufferHandler(message) {
+function bufferMessage(message) {
     messageBuffered += message;
 
     if (messageBuffered.includes('|')) {
         let messageParts = messageBuffered.split('|');
         messageBuffered = messageParts.pop();
-
-        messageParts.forEach(part => {
-            if (!discartableMessageHandler(part))
-                return false;
-        });
-
-        return true;
+        return messageParts.every(part => handleMessageParts(part));
     }
+
     return false;
 }
 
-function discartableMessageHandler(messagePart) {
+function handleMessageParts(messagePart) {
     try {
         let object = JSON.parse(messagePart);
 
@@ -97,19 +76,25 @@ function discartableMessageHandler(messagePart) {
             return false;
         }
 
-        if (object.sequence === latestAck + 1) {
-            latestAck = object.sequence;
-            addToReceivedPackages(object);
-        } else if (object.sequence > latestAck + 1) {
-            requestMissingPackage();
-            return false;
-        }
-
-        return true;
+        return handlePackage(packageObject);
     } catch (e) {
         console.error('Error parsing message:', e);
         return false;
     }
+}
+
+function handlePackage(packageObject) {
+    if (packageObject.sequence <= latestAck) return true;
+
+    if (packageObject.sequence === latestAck + 1) {
+        latestAck = packageObject.sequence;
+        addToReceivedPackages(packageObject);
+    } else {
+        requestMissingPackage();
+        return false;
+    }
+
+    return true;
 }
 
 function addToReceivedPackages(object) {
@@ -129,18 +114,24 @@ function resendPackages(ack) {
         packagesSent
             .filter(x => x.sequence > ack)
             .forEach(y => {
-                const msgBuffer = sendMessageBufferHandler(JSON.stringify(y));
-
-                client.send(msgBuffer, 0, msgBuffer.length, serverPort, serverHost, (err) => {
-                    if (err) {
-                        console.error(`Error sending message to ${serverHost}:${serverHost}: ${err}`);
-                    }
-                });
+                sendMessage(JSON.stringify(y), false);
             });
     }
 }
 
-function sendMessageBufferHandler(message) {
-    let content = Buffer.from(`${message}|`);
-    return content;
+function sendMessage(messageToSend, addToPackages = true) {
+    const message = JSON.stringify(messageToSend);
+    const msgBuffer = Buffer.from(`${message}|`);
+
+    console.log(messageToSend);
+
+    client.send(msgBuffer, 0, msgBuffer.length, serverPort, serverHost, (err) => {
+        if (err) {
+            console.error(`Error sending message to ${serverHost}:${serverHost}: ${err}`);
+        } else if (addToPackages) {
+            packagesSent.push(JSON.parse(messageToSend));
+            packagesSent.sort((a, b) => a.sequence - b.sequence);
+            packageSequence++;
+        }
+    });
 }

@@ -15,18 +15,18 @@ server.on('message', (msg, senderInfo) => {
         return;
     }
 
-    if (random2 < 10) {
-        console.log("Pacote duplicado:", msg);
+    // if (random2 < 10) {
+    //     console.log("Pacote duplicado:", msg);
 
-        let client = clients.find(p => p.rinfo.address === senderInfo.address && p.rinfo.port === senderInfo.port);
+    //     let client = clients.find(p => p.rinfo.address === senderInfo.address && p.rinfo.port === senderInfo.port);
 
-        if (!client) {
-            client = new ClientObject(senderInfo, server);
-            clients.push(client);
-        }
+    //     if (!client) {
+    //         client = new ClientObject(senderInfo, server);
+    //         clients.push(client);
+    //     }
 
-        client.onReceivedMessage(msg);
-    }
+    //     client.onReceivedMessage(msg);
+    // }
 
     let client = clients.find(p => p.rinfo.address === senderInfo.address && p.rinfo.port === senderInfo.port);
 
