@@ -55,7 +55,7 @@ function receivedMessage(message) {
 function bufferMessage(message) {
     messageBuffered += message;
 
-    if (messageBuffered.includes('|')) {
+    if (messageBuffered.indexOf('|')) {
         let messageParts = messageBuffered.split('|');
         messageBuffered = messageParts.pop();
         return messageParts.every(part => handleMessageParts(part));

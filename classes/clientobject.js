@@ -23,7 +23,7 @@ class ClientObject {
     bufferMessage(message) {
         this.messageBuffered += message;
 
-        if (this.messageBuffered.includes('|')) {
+        if (this.messageBuffered.indexOf('|')) {
             let messageParts = this.messageBuffered.split('|');
             this.messageBuffered = messageParts.pop();
             return messageParts.every(part => this.handleMessageParts(part));
