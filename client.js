@@ -35,7 +35,7 @@ reader.prompt();
 
 reader.on('line', (line) => {
     let object = new Package(packageSequence, latestAck, line, REQUEST_TYPES.REQ);
-    sendMessage(JSON.stringify(object));
+    sendMessage(object);
 });
 
 client.on('message', (msg) => {
@@ -106,7 +106,7 @@ function addToReceivedPackages(object) {
 
 function requestMissingPackage() {
     let requestResend = new Package(packageSequence, latestAck, '', REQUEST_TYPES.RESEND);
-    sendMessage(JSON.stringify(requestResend));
+    sendMessage(requestResend);
 }
 
 function resendPackages(ack) {
@@ -114,7 +114,7 @@ function resendPackages(ack) {
         packagesSent
             .filter(x => x.sequence > ack)
             .forEach(y => {
-                sendMessage(JSON.stringify(y), false);
+                sendMessage(y, false);
             });
     }
 }
@@ -123,13 +123,13 @@ function sendMessage(messageToSend, addToPackages = true) {
     const message = JSON.stringify(messageToSend);
     const msgBuffer = Buffer.from(`${message}|`);
 
-    console.log(messageToSend);
+    console.log(message);
 
     client.send(msgBuffer, 0, msgBuffer.length, serverPort, serverHost, (err) => {
         if (err) {
             console.error(`Error sending message to ${serverHost}:${serverHost}: ${err}`);
         } else if (addToPackages) {
-            packagesSent.push(JSON.parse(messageToSend));
+            packagesSent.push(JSON.parse(message));
             packagesSent.sort((a, b) => a.sequence - b.sequence);
             packageSequence++;
         }

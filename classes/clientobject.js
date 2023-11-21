@@ -82,7 +82,7 @@ class ClientObject {
             this.packagesSent
                 .filter(x => x.sequence > ack)
                 .forEach(y => {
-                    this.sendMessage(JSON.stringify(y), false);
+                    this.sendMessage(y, false);
                 });
         }
     }
@@ -95,7 +95,7 @@ class ClientObject {
             if (err) {
                 console.error(`Error sending message to ${this.rinfo.address}:${this.rinfo.port}: ${err}`);
             } else if (addToPackages) {
-                this.packagesSent.push(messageToSend);
+                this.packagesSent.push(JSON.parse(message));
                 this.packagesSent.sort((a, b) => a.sequence - b.sequence);
                 this.packageSequence++;
             }
