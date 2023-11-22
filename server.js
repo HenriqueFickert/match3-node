@@ -10,10 +10,10 @@ server.on('message', (msg, senderInfo) => {
     let random = Math.floor(Math.random() * 101);
     let random2 = Math.floor(Math.random() * 101);
 
-    // if (random < 10) {
-    //     console.log("Pacote perdido:", msg);
-    //     return;
-    // }
+    if (random < 30) {
+        console.log("Pacote perdido:", msg);
+        return;
+    }
 
     // if (random2 < 10) {
     //     console.log("Pacote duplicado:", msg);

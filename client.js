@@ -54,12 +54,15 @@ function receivedMessage(message) {
         return;
 
     console.log("Server: ", packagesReceived[packagesReceived.length - 1]);
+
+    var objectToBeUsed = getNextPackage();
+    console.log("Objeto usado no jogo:", objectToBeUsed);
 }
 
 function bufferMessage(message) {
     messageBuffered += message;
 
-    if (messageBuffered.indexOf('|')) {
+    if (messageBuffered.includes('|')) {
         let messageParts = messageBuffered.split('|');
         messageBuffered = messageParts.pop();
         return messageParts.every(part => handleMessageParts(part));
@@ -117,8 +120,18 @@ function addToReceivedPackages(object) {
 
 function cleanUpPackages() {
     packagesSent = packagesSent.filter(pkg => pkg.sequence > latestAck);
-    packagesReceived = packagesReceived.filter(pkg => pkg.sequence > latestAck);
 }
+
+function getNextPackage() {
+    if (packagesReceived.length > 0) {
+        let firstPackage = packagesReceived[0];
+        packagesReceived.shift();
+        return firstPackage;
+    }
+
+    return null;
+}
+
 
 function requestMissingPackage() {
     let requestResend = new Package(packageSequence, latestAck, '', REQUEST_TYPES.RESEND);
@@ -126,6 +139,8 @@ function requestMissingPackage() {
 }
 
 function resendPackages(ack) {
+    console.log("ACK Received: ", ack);
+
     if (packagesSent.length > 0) {
         packagesSent
             .filter(x => x.sequence > ack)
@@ -145,11 +160,22 @@ function sendMessage(messageToSend, addToPackages = true) {
         if (err) {
             console.error(`Error sending message to ${serverHost}:${serverHost}: ${err}`);
         } else if (addToPackages) {
-            packagesSent.push(JSON.parse(message));
-            packagesSent.sort((a, b) => a.sequence - b.sequence);
-            packageSequence++;
+            const packageAdded = addPackageToSentList(JSON.parse(message));
+            if (packageAdded) {
+                packageSequence++;
+            }
         }
     });
+}
+
+function addPackageToSentList(packageObject) {
+    if (!packagesSent.some(p => p.sequence === packageObject.sequence)) {
+        packagesSent.push(packageObject);
+        packagesSent.sort((a, b) => a.sequence - b.sequence);
+        return true;
+    }
+
+    return false;
 }
 
 function startTimeoutTimer() {

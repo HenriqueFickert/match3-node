@@ -22,12 +22,15 @@ class ClientObject {
 
         if (!this.packagesReceived[this.packagesReceived.length - 1])
             return;
+
+        var objectToBeUsed = this.getNextPackage();
+        console.log("Objeto usado no jogo:", objectToBeUsed);
     }
 
     bufferMessage(message) {
         this.messageBuffered += message;
 
-        if (this.messageBuffered.indexOf('|')) {
+        if (this.messageBuffered.includes('|')) {
             let messageParts = this.messageBuffered.split('|');
             this.messageBuffered = messageParts.pop();
             return messageParts.every(part => this.handleMessageParts(part));
@@ -42,6 +45,9 @@ class ClientObject {
 
             if (!packageObject.protocolId || packageObject.protocolId !== 'MRQST')
                 return false;
+
+            console.log("Current Packaged Sequence Received: ", packageObject.sequence);
+            console.log("Current ACK: ", this.latestAck);
 
             if (packageObject.type === REQUEST_TYPES.RESEND) {
                 this.resendPackages(packageObject.ack);
@@ -66,7 +72,7 @@ class ClientObject {
         if (packageObject.sequence === this.latestAck + 1) {
             this.latestAck = packageObject.sequence;
             this.addToReceivedPackages(packageObject);
-            this.cleanUpPackages();
+            this.cleanUpSendPackages();
         } else {
             this.requestMissingPackage();
             return false;
@@ -82,9 +88,18 @@ class ClientObject {
         }
     }
 
-    cleanUpPackages() {
+    cleanUpSendPackages() {
         this.packagesSent = this.packagesSent.filter(pkg => pkg.sequence > this.latestAck);
-        this.packagesReceived = this.packagesReceived.filter(pkg => pkg.sequence > this.latestAck);
+    }
+
+    getNextPackage() {
+        if (this.packagesReceived.length > 0) {
+            let firstPackage = this.packagesReceived[0];
+            this.packagesReceived.shift();
+            return firstPackage;
+        }
+
+        return null;
     }
 
     requestMissingPackage() {
@@ -110,12 +125,24 @@ class ClientObject {
             if (err) {
                 console.error(`Error sending message to ${this.rinfo.address}:${this.rinfo.port}: ${err}`);
             } else if (addToPackages) {
-                this.packagesSent.push(JSON.parse(message));
-                this.packagesSent.sort((a, b) => a.sequence - b.sequence);
-                this.packageSequence++;
+                const packageAdded = this.addPackageToSentList(JSON.parse(message));
+                if (packageAdded) {
+                    this.packageSequence++;
+                }
             }
         });
     }
+
+    addPackageToSentList(packageObject) {
+        if (!this.packagesSent.some(p => p.sequence === packageObject.sequence)) {
+            this.packagesSent.push(packageObject);
+            this.packagesSent.sort((a, b) => a.sequence - b.sequence);
+            return true;
+        }
+
+        return false;
+    }
+
 
     startTimeoutTimer() {
         this.timeoutTimer = setTimeout(() => {
