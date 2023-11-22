@@ -10,7 +10,7 @@ server.on('message', (msg, senderInfo) => {
     let random = Math.floor(Math.random() * 101);
     let random2 = Math.floor(Math.random() * 101);
 
-    if (random < 90) {
+    if (random < 20) {
         console.log("Pacote perdido:", msg);
         return;
     }

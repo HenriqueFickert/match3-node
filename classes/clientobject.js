@@ -57,6 +57,7 @@ class ClientObject {
         if (packageObject.sequence === this.latestAck + 1) {
             this.latestAck = packageObject.sequence;
             this.addToReceivedPackages(packageObject);
+            this.cleanUpPackages();
         } else {
             this.requestMissingPackage();
             return false;
@@ -67,10 +68,14 @@ class ClientObject {
 
     addToReceivedPackages(object) {
         if (!this.packagesReceived.some(item => item.sequence === object.sequence)) {
-            this.packagesReceived = this.packagesReceived.filter(x => x.ack < this.latestAck);
             this.packagesReceived.push(object);
             this.packagesReceived.sort((a, b) => a.sequence - b.sequence);
         }
+    }
+
+    cleanUpPackages() {
+        this.packagesSent = this.packagesSent.filter(pkg => pkg.sequence > this.latestAck);
+        this.packagesReceived = this.packagesReceived.filter(pkg => pkg.sequence > this.latestAck);
     }
 
     requestMissingPackage() {

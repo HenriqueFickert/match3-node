@@ -89,6 +89,7 @@ function handlePackage(packageObject) {
     if (packageObject.sequence === latestAck + 1) {
         latestAck = packageObject.sequence;
         addToReceivedPackages(packageObject);
+        cleanUpPackages();
     } else {
         requestMissingPackage();
         return false;
@@ -103,6 +104,11 @@ function addToReceivedPackages(object) {
         packagesReceived.push(object);
         packagesReceived.sort((a, b) => a.sequence - b.sequence);
     }
+}
+
+function cleanUpPackages() {
+    packagesSent = packagesSent.filter(pkg => pkg.sequence > latestAck);
+    packagesReceived = packagesReceived.filter(pkg => pkg.sequence > latestAck);
 }
 
 function requestMissingPackage() {
