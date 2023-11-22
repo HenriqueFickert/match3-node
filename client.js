@@ -56,7 +56,7 @@ function receivedMessage(message) {
     console.log("Server: ", packagesReceived[packagesReceived.length - 1]);
 
     var objectToBeUsed = getNextPackage();
-    console.log("Objeto usado no jogo:", objectToBeUsed);
+    console.log("Objeto usado no jogo:", objectToBeUsed, " Tamanho da lista de pacotes recebidos", packagesReceived.length);
 }
 
 function bufferMessage(message) {
