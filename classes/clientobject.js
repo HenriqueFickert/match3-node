@@ -160,6 +160,7 @@ class ClientObject {
         console.log('Send a timeout request.');
         const timeoutMessage = new Package(this.packageSequence, this.latestAck, '', REQUEST_TYPES.TIMEOUT);
         this.sendMessage(timeoutMessage, false);
+        this.resetTimeoutTimer();
     }
 
     sendLastMessageAgain() {

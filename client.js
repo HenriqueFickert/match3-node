@@ -194,6 +194,7 @@ function handleTimeout() {
     console.log('Send a timeout request.');
     const timeoutMessage = new Package(packageSequence, latestAck, '', REQUEST_TYPES.TIMEOUT);
     sendMessage(timeoutMessage, false);
+    resetTimeoutTimer();
 }
 
 function sendLastMessageAgain() {
