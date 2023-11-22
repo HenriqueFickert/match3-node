@@ -67,6 +67,7 @@ class ClientObject {
 
     addToReceivedPackages(object) {
         if (!this.packagesReceived.some(item => item.sequence === object.sequence)) {
+            this.packagesReceived = this.packagesReceived.filter(x => x.ack < this.latestAck);
             this.packagesReceived.push(object);
             this.packagesReceived.sort((a, b) => a.sequence - b.sequence);
         }
