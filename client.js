@@ -101,6 +101,7 @@ function handlePackage(packageObject) {
     if (packageObject.sequence === latestAck + 1) {
         latestAck = packageObject.sequence;
         addToReceivedPackages(packageObject);
+        //cleanUpPackages(); Talvez aqui
     } else {
         requestMissingPackage();
         return false;
@@ -200,3 +201,5 @@ function sendLastMessageAgain() {
         sendMessage(lastElement, false);
     }
 }
+
+//E se a mensagem de timeout for perdida talvez reiniciar o timeout?
