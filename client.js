@@ -13,6 +13,8 @@ var packagesReceived = [];
 var packageSequence = 1;
 var latestAck = 0;
 var messageBuffered = '';
+var timeoutTimer = null;
+// startTimeoutTimer();
 
 client.on('error', (err) => {
     console.error(`Client error: ${err.stack}`);
@@ -43,6 +45,8 @@ client.on('message', (msg) => {
 });
 
 function receivedMessage(message) {
+    resetTimeoutTimer();
+
     if (!bufferMessage(message))
         return;
 
@@ -66,13 +70,18 @@ function bufferMessage(message) {
 
 function handleMessageParts(messagePart) {
     try {
-        let object = JSON.parse(messagePart);
+        let packageObject = JSON.parse(messagePart);
 
-        if (!object.protocolId || object.protocolId !== 'MRQST')
+        if (!packageObject.protocolId || packageObject.protocolId !== 'MRQST')
             return false;
 
-        if (object.type === REQUEST_TYPES.RESEND) {
-            resendPackages(object.ack);
+        if (packageObject.type === REQUEST_TYPES.RESEND) {
+            resendPackages(packageObject.ack);
+            return false;
+        }
+
+        if (packageObject.type === REQUEST_TYPES.TIMEOUT) {
+            sendLastMessageAgain();
             return false;
         }
 
@@ -141,4 +150,28 @@ function sendMessage(messageToSend, addToPackages = true) {
             packageSequence++;
         }
     });
+}
+
+function startTimeoutTimer() {
+    timeoutTimer = setTimeout(() => {
+        handleTimeout();
+    }, 3000);
+}
+
+function resetTimeoutTimer() {
+    clearTimeout(timeoutTimer);
+    startTimeoutTimer();
+}
+
+function handleTimeout() {
+    console.log('Send a timeout request.');
+    const timeoutMessage = new Package(packageSequence, latestAck, '', REQUEST_TYPES.TIMEOUT);
+    sendMessage(timeoutMessage, false);
+}
+
+function sendLastMessageAgain() {
+    if (packagesSent.length > 0) {
+        let lastElement = packagesSent[packagesSent.length - 1];
+        sendMessage(lastElement, false);
+    }
 }

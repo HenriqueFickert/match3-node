@@ -10,9 +10,13 @@ class ClientObject {
         this.packageSequence = 1;
         this.latestAck = 0;
         this.messageBuffered = '';
+        this.timeoutTimer = null;
+        this.startTimeoutTimer();
     }
 
     onReceivedMessage(message) {
+        this.resetTimeoutTimer();
+
         if (!this.bufferMessage(message))
             return;
 
@@ -41,6 +45,11 @@ class ClientObject {
 
             if (packageObject.type === REQUEST_TYPES.RESEND) {
                 this.resendPackages(packageObject.ack);
+                return false;
+            }
+
+            if (packageObject.type === REQUEST_TYPES.TIMEOUT) {
+                this.sendLastMessageAgain();
                 return false;
             }
 
@@ -106,6 +115,30 @@ class ClientObject {
                 this.packageSequence++;
             }
         });
+    }
+
+    startTimeoutTimer() {
+        this.timeoutTimer = setTimeout(() => {
+            this.handleTimeout();
+        }, 3000);
+    }
+
+    resetTimeoutTimer() {
+        clearTimeout(this.timeoutTimer);
+        this.startTimeoutTimer();
+    }
+
+    handleTimeout() {
+        console.log('Send a timeout request.');
+        const timeoutMessage = new Package(this.packageSequence, this.latestAck, '', REQUEST_TYPES.TIMEOUT);
+        this.sendMessage(timeoutMessage, false);
+    }
+
+    sendLastMessageAgain() {
+        if (this.packagesSent.length > 0) {
+            let lastPackage = this.packagesSent[this.packagesSent.length - 1];
+            this.sendMessage(lastPackage, false);
+        }
     }
 }
 
