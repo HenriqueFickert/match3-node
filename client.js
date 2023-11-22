@@ -78,6 +78,8 @@ function handleMessageParts(messagePart) {
         if (!packageObject.protocolId || packageObject.protocolId !== 'MRQST')
             return false;
 
+        cleanUpPackages(packageObject.ack);
+
         if (packageObject.type === REQUEST_TYPES.RESEND) {
             resendPackages(packageObject.ack);
             return false;
@@ -101,7 +103,6 @@ function handlePackage(packageObject) {
     if (packageObject.sequence === latestAck + 1) {
         latestAck = packageObject.sequence;
         addToReceivedPackages(packageObject);
-        //cleanUpPackages(); Talvez aqui
     } else {
         requestMissingPackage();
         return false;
@@ -118,8 +119,8 @@ function addToReceivedPackages(object) {
     }
 }
 
-function cleanUpPackages() {
-    packagesSent = packagesSent.filter(pkg => pkg.sequence > latestAck);
+function cleanUpPackages(ack) {
+    packagesSent = packagesSent.filter(pkg => pkg.sequence > ack);
 }
 
 function getNextPackage() {

@@ -49,6 +49,8 @@ class ClientObject {
             console.log("Current Packaged Sequence Received: ", packageObject.sequence);
             console.log("Current ACK: ", this.latestAck);
 
+            this.cleanUpSendPackages(packageObject.ack);
+
             if (packageObject.type === REQUEST_TYPES.RESEND) {
                 this.resendPackages(packageObject.ack);
                 return false;
@@ -72,7 +74,6 @@ class ClientObject {
         if (packageObject.sequence === this.latestAck + 1) {
             this.latestAck = packageObject.sequence;
             this.addToReceivedPackages(packageObject);
-            //this.cleanUpSendPackages(); Talvez aqui
         } else {
             this.requestMissingPackage();
             return false;
@@ -88,8 +89,8 @@ class ClientObject {
         }
     }
 
-    cleanUpSendPackages() {
-        this.packagesSent = this.packagesSent.filter(pkg => pkg.sequence > this.latestAck);
+    cleanUpSendPackages(ack) {
+        this.packagesSent = this.packagesSent.filter(pkg => pkg.sequence > ack);
     }
 
     getNextPackage() {
@@ -170,3 +171,5 @@ class ClientObject {
 }
 
 module.exports = ClientObject;
+
+//E se a mensagem de timeout for perdida talvez reiniciar o timeout?
