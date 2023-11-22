@@ -144,7 +144,6 @@ class ClientObject {
         return false;
     }
 
-
     startTimeoutTimer() {
         this.timeoutTimer = setTimeout(() => {
             this.handleTimeout();

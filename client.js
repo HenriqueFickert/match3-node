@@ -14,7 +14,6 @@ var packageSequence = 1;
 var latestAck = 0;
 var messageBuffered = '';
 var timeoutTimer = null;
-// startTimeoutTimer();
 
 client.on('error', (err) => {
     console.error(`Client error: ${err.stack}`);
