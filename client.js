@@ -101,7 +101,6 @@ function handlePackage(packageObject) {
     if (packageObject.sequence === latestAck + 1) {
         latestAck = packageObject.sequence;
         addToReceivedPackages(packageObject);
-        cleanUpPackages();
     } else {
         requestMissingPackage();
         return false;
@@ -131,7 +130,6 @@ function getNextPackage() {
 
     return null;
 }
-
 
 function requestMissingPackage() {
     let requestResend = new Package(packageSequence, latestAck, '', REQUEST_TYPES.RESEND);
@@ -172,6 +170,7 @@ function addPackageToSentList(packageObject) {
     if (!packagesSent.some(p => p.sequence === packageObject.sequence)) {
         packagesSent.push(packageObject);
         packagesSent.sort((a, b) => a.sequence - b.sequence);
+        console.log("Tamanho do packagesSent: ", packagesSent.length);
         return true;
     }
 

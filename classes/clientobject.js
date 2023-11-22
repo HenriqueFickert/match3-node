@@ -72,7 +72,7 @@ class ClientObject {
         if (packageObject.sequence === this.latestAck + 1) {
             this.latestAck = packageObject.sequence;
             this.addToReceivedPackages(packageObject);
-            this.cleanUpSendPackages();
+            //this.cleanUpSendPackages(); Talvez aqui
         } else {
             this.requestMissingPackage();
             return false;
