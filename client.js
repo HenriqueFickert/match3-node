@@ -112,7 +112,6 @@ function handlePackage(packageObject) {
 
 function addToReceivedPackages(object) {
     if (!packagesReceived.some(item => item.sequence === object.sequence)) {
-        packagesReceived = packagesReceived.filter(x => x.ack < latestAck);
         packagesReceived.push(object);
         packagesReceived.sort((a, b) => a.sequence - b.sequence);
     }
@@ -202,5 +201,3 @@ function sendLastMessageAgain() {
         sendMessage(lastElement, false);
     }
 }
-
-//E se a mensagem de timeout for perdida talvez reiniciar o timeout?

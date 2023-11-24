@@ -171,5 +171,3 @@ class ClientObject {
 }
 
 module.exports = ClientObject;
-
-//E se a mensagem de timeout for perdida talvez reiniciar o timeout?
