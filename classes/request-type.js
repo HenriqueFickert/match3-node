@@ -4,6 +4,7 @@ const REQUEST_TYPES = {
   RESEND: 'RESEND',
   ACK: 'ACK',
   TIMEOUT: 'TIMEOUT',
+  DISCONNECTED: 'DISCONNECTED',
 };
 
 module.exports = REQUEST_TYPES;

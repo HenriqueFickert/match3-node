@@ -11,6 +11,7 @@ class ClientObject {
         this.latestAck = 0;
         this.messageBuffered = '';
         this.timeoutTimer = null;
+        this.timeOutCounter = 0;
         this.startTimeoutTimer();
     }
 
@@ -152,14 +153,27 @@ class ClientObject {
 
     resetTimeoutTimer() {
         clearTimeout(this.timeoutTimer);
+        this.timeOutCounter = 0;
         this.startTimeoutTimer();
     }
 
     handleTimeout() {
         console.log('Send a timeout request.');
+
+        if (this.timeOutCounter >= 5) {
+            this.handlerDisconnect();
+            return;
+        }
+
         const timeoutMessage = new Package(this.packageSequence, this.latestAck, '', REQUEST_TYPES.TIMEOUT);
         this.sendMessage(timeoutMessage, false);
-        this.resetTimeoutTimer();
+        this.timeOutCounter++;
+        this.startTimeoutTimer();
+    }
+
+    handlerDisconnect() {
+        const timeoutMessage = new Package(this.packageSequence, this.latestAck, '', REQUEST_TYPES.DISCONNECTED);
+        this.sendMessage(timeoutMessage, false);
     }
 
     sendLastMessageAgain() {
