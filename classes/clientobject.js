@@ -25,6 +25,7 @@ class ClientObject {
             return;
 
         var objectToBeUsed = this.getNextPackage();
+        this.sendMessage(objectToBeUsed);
         console.log("Objeto usado no jogo: ", objectToBeUsed, " Tamanho da lista de pacotes recebidos", this.packagesReceived.length);
     }
 
