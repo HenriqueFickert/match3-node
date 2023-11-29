@@ -106,7 +106,7 @@ class ClientObject {
 
     requestMissingPackage() {
         let requestResend = new Package(this.packageSequence, this.latestAck, '', REQUEST_TYPES.RESEND);
-        this.sendMessage(requestResend);
+        this.sendMessage(requestResend, false);
     }
 
     resendPackages(ack) {

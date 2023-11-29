@@ -133,7 +133,7 @@ function getNextPackage() {
 
 function requestMissingPackage() {
     let requestResend = new Package(packageSequence, latestAck, '', REQUEST_TYPES.RESEND);
-    sendMessage(requestResend);
+    sendMessage(requestResend, false);
 }
 
 function resendPackages(ack) {
