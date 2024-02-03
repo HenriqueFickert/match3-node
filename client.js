@@ -52,10 +52,10 @@ function receivedMessage(message) {
     if (!packagesReceived[packagesReceived.length - 1])
         return;
 
-    console.log("Server: ", packagesReceived[packagesReceived.length - 1]);
+    // console.log("Mensagem recebida: ", packagesReceived[packagesReceived.length - 1]);
 
     var objectToBeUsed = getNextPackage();
-    console.log("Objeto usado no jogo:", objectToBeUsed, " Tamanho da lista de pacotes recebidos", packagesReceived.length);
+    // console.log("Objeto usado no jogo:", objectToBeUsed, " Tamanho da lista de pacotes recebidos", packagesReceived.length);
 }
 
 function bufferMessage(message) {
@@ -137,7 +137,7 @@ function requestMissingPackage() {
 }
 
 function resendPackages(ack) {
-    console.log("ACK Received: ", ack);
+    console.log("ACK Recebido: ", ack);
 
     if (packagesSent.length > 0) {
         packagesSent
@@ -152,7 +152,7 @@ function sendMessage(messageToSend, addToPackages = true) {
     const message = JSON.stringify(messageToSend);
     const msgBuffer = Buffer.from(`${message}|`);
 
-    console.log(message);
+    console.log("Mensagem enviada:", message);
 
     client.send(msgBuffer, 0, msgBuffer.length, serverPort, serverHost, (err) => {
         if (err) {
@@ -170,7 +170,7 @@ function addPackageToSentList(packageObject) {
     if (!packagesSent.some(p => p.sequence === packageObject.sequence)) {
         packagesSent.push(packageObject);
         packagesSent.sort((a, b) => a.sequence - b.sequence);
-        console.log("Tamanho do packagesSent: ", packagesSent.length);
+        // console.log("Tamanho do packagesSent: ", packagesSent.length);
         return true;
     }
 

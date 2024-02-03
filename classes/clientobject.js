@@ -26,7 +26,7 @@ class ClientObject {
 
         var objectToBeUsed = this.getNextPackage();
         this.sendMessage(objectToBeUsed);
-        console.log("Objeto usado no jogo: ", objectToBeUsed, " Tamanho da lista de pacotes recebidos", this.packagesReceived.length);
+        // console.log("Objeto usado no jogo: ", objectToBeUsed, " Tamanho da lista de pacotes recebidos", this.packagesReceived.length);
     }
 
     bufferMessage(message) {
@@ -48,8 +48,8 @@ class ClientObject {
             if (!packageObject.protocolId || packageObject.protocolId !== 'MRQST')
                 return false;
 
-            console.log("Current Packaged Sequence Received: ", packageObject.sequence);
-            console.log("Current ACK: ", this.latestAck);
+            // console.log("Current Packaged Sequence Received: ", packageObject.sequence);
+            console.log("ACK atual: ", this.latestAck);
 
             this.cleanUpSendPackages(packageObject.ack);
 
@@ -121,6 +121,14 @@ class ClientObject {
     }
 
     sendMessage(messageToSend, addToPackages = true) {
+
+        let random = Math.floor(Math.random() * 101);
+
+        if (random < 90) {
+            console.log("Pacote perdido no envio:", messageToSend);
+            return;
+        }
+
         const message = JSON.stringify(messageToSend);
         const msgBuffer = Buffer.from(`${message}|`);
 
@@ -149,7 +157,7 @@ class ClientObject {
     startTimeoutTimer() {
         this.timeoutTimer = setTimeout(() => {
             this.handleTimeout();
-        }, 3000);
+        }, 5000);
     }
 
     resetTimeoutTimer() {
@@ -181,6 +189,9 @@ class ClientObject {
         if (this.packagesSent.length > 0) {
             let lastPackage = this.packagesSent[this.packagesSent.length - 1];
             this.sendMessage(lastPackage, false);
+        } else {
+            const timeoutMessage = new Package(this.packageSequence, this.latestAck, '', REQUEST_TYPES.TIMEOUT);
+            this.sendMessage(timeoutMessage, false);
         }
     }
 }
